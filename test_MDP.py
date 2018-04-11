@@ -2,6 +2,7 @@ from unittest import TestCase
 from hw3cs561s2018 import MDP
 import numpy as np
 import numpy.testing as test
+import scipy.ndimage.interpolation as shift
 
 
 class TestMDP(TestCase):
@@ -53,8 +54,8 @@ class TestMDP(TestCase):
         p_right_walk_up = np.squeeze(mdp.p[:, :, mdp.right, mdp.walk_up])
         test.assert_array_almost_equal(np.ones((3, 3)) * 0.15, p_right_walk_up)
 
-        for direction in (mdp.up, mdp.left, mdp.right, mdp.down):
-            for action in (mdp.walk_up, mdp.walk_left, mdp.walk_right, mdp.walk_down, mdp.run_up, mdp.run_left, mdp.run_right, mdp.run_down):
+        for direction in mdp.direction_enum:
+            for action in mdp.action_enum:
                 p = np.squeeze(mdp.p[:, :, direction, action])
                 if direction == action:  # walk_direction = direction
                     test.assert_array_almost_equal(p, np.ones((3, 3)) * 0.7)
@@ -64,5 +65,34 @@ class TestMDP(TestCase):
                     test.assert_array_almost_equal(p, np.zeros((3, 3)))
                 elif action < 4:  # walk
                     test.assert_array_almost_equal(np.ones((3, 3)) * 0.15, p)
-                else: #run
+                else:  # run
                     test.assert_array_almost_equal(np.ones((3, 3)) * 0.2, p)
+
+    def test_value_expend(self):
+        mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.6, reward_walk=1, reward_run=1, discount=0, exit_list=[((0, 2), 1), ((1, 2), -1)])
+        mdp.value = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        big_value = mdp.policy_evaluation(mdp.walk_up)
+        test.assert_equal(big_value.shape, (3, 3))
+        # test.assert_array_almost_equal(np.array([[1.15, 2, 2.85], [1.9, 0, 3.9], [5.05, 8, 6.75]]), big_value)
+        # print(big_value[:, :, mdp.up, mdp.walk_up])
+        # shift.shift(big_value, [1, 0, 0, 0])
+        # for action in mdp.action_enum:
+        #     value_action = big_value[:, :, :, action]
+        #     print(value_action)
+        #     if action == mdp.walk_up:
+        #         for direction in mdp.direction_enum:
+        #             print(value_action[:, :, direction])
+
+    # def test_shift_matrix(self):
+    #     mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.6, reward_walk=1, reward_run=1, discount=0, exit_list=[((0, 2), 1), ((1, 2), -1)])
+    #     big_value = mdp.value_expend()
+    #     print(big_value[:, :, mdp.up, mdp.walk_up])
+    #     big_value = np.delete(np.concatenate((big_value[0:1, ...], big_value), axis=0), -1, axis=0)
+    #     print(big_value[:, :, mdp.up, mdp.walk_up])
+    #     for direction in mdp.direction_enum:
+    #         test.assert_array_almost_equal(np.array([[0, 0, 1], [0, 0, 1], [0, 0, -1]]), big_value[:, :, direction, mdp.walk_up])
+
+    def test_shift(self):
+        xs = np.array([[5., 1., 2., 3., 4., 5., 6., 7., 8., 9.], [5., -2., 2., 3., 4., 5., 6., 7., 8., 9.]])
+
+        print(shift.shift(xs, (0, 1), mode="nearest"))
