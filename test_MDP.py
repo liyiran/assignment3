@@ -6,8 +6,6 @@ import scipy.ndimage.interpolation as shift
 
 
 class TestMDP(TestCase):
-    def test_init(self):
-        mpd = MDP(1000, 1000, 0.8, 0.7, 1, 9, 10)
 
     def test_eistain(self):
         m1 = np.array([[1, 2, 3]])
@@ -68,21 +66,6 @@ class TestMDP(TestCase):
                 else:  # run
                     test.assert_array_almost_equal(np.ones((3, 3)) * 0.2, p)
 
-    def test_value_expend(self):
-        mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.6, reward_walk=1, reward_run=1, discount=0, exit_list=[((0, 2), 1), ((1, 2), -1)])
-        mdp.value = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        big_value = mdp.policy_evaluation(mdp.walk_up)
-        test.assert_equal(big_value.shape, (3, 3))
-        # test.assert_array_almost_equal(np.array([[1.15, 2, 2.85], [1.9, 0, 3.9], [5.05, 8, 6.75]]), big_value)
-        # print(big_value[:, :, mdp.up, mdp.walk_up])
-        # shift.shift(big_value, [1, 0, 0, 0])
-        # for action in mdp.action_enum:
-        #     value_action = big_value[:, :, :, action]
-        #     print(value_action)
-        #     if action == mdp.walk_up:
-        #         for direction in mdp.direction_enum:
-        #             print(value_action[:, :, direction])
-
     # def test_shift_matrix(self):
     #     mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.6, reward_walk=1, reward_run=1, discount=0, exit_list=[((0, 2), 1), ((1, 2), -1)])
     #     big_value = mdp.value_expend()
@@ -140,5 +123,5 @@ class TestMDP(TestCase):
 
         run_up = mdp.policy_evaluation(mdp.run_up)
         test.assert_array_almost_equal(np.array([[0.6 + 0.2 + 0.6, 1.2 + 0.4 + 0.4, 1.8 + 0.2 + 0.6],
-                                                 [2.4 + 0.8 + 0.8, 5, 3.6 + 1.2 + 1.2], 
+                                                 [2.4 + 0.8 + 0.8, 5, 3.6 + 1.2 + 1.2],
                                                  [0.6 + 1.4 + 1.8, 4.8 + 1.6 + 1.6, 1.8 + 1.4 + 1.8]]), run_up)
