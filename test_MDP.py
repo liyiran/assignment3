@@ -92,7 +92,53 @@ class TestMDP(TestCase):
     #     for direction in mdp.direction_enum:
     #         test.assert_array_almost_equal(np.array([[0, 0, 1], [0, 0, 1], [0, 0, -1]]), big_value[:, :, direction, mdp.walk_up])
 
-    def test_shift(self):
+    def test_index(self):
         xs = np.array([[5., 1., 2., 3., 4., 5., 6., 7., 8., 9.], [5., -2., 2., 3., 4., 5., 6., 7., 8., 9.]])
+        idx = np.array([(0, 1), (0, 2)])
+        xs[idx[:, 0], idx[:, 1]] = 100
+        print(xs)
+        # print(shift.shift(xs, (0, 1), mode="nearest"))
+        # try:
+        #     print(xs[100])
+        # except:
+        #     pass
+        # self.assertTrue(True)
 
-        print(shift.shift(xs, (0, 1), mode="nearest"))
+    def test_shift(self):
+        x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+        x = shift.shift(x, (2, 0), mode="reflect")
+        print(x)
+        x[:, [0, 1]] = x[:, [1, 0]]
+        print(x)
+        # print(np.roll(x, (1, 0)))
+
+    def test_wall_builder(self):
+        mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.6, reward_walk=1, reward_run=1, discount=0, wall_list=[(1, 1), (0, 1)], exit_list=[((0, 2), 1), ((1, 2), -1)])
+        walk_up = mdp.wall_up_1
+        self.assertListEqual([(2, 1), (1, 1)], walk_up)
+        walk_left = mdp.wall_left_1
+        self.assertListEqual([(2, 1), (1, 1)], walk_up)
+        walk_down = mdp.wall_down_1
+        self.assertListEqual([(0, 1)], walk_down)
+        walk_right = mdp.wall_right_2
+        self.assertListEqual([(1, 0), (0, 0)], walk_right)
+
+        run_up = mdp.wall_up_2
+        self.assertListEqual([(2, 1), (1, 1), (2, 1)], run_up)
+        run_left = mdp.wall_left_2
+        self.assertListEqual([(1, 2), (0, 2)], run_left)
+        run_down = mdp.wall_down_2
+        self.assertListEqual([(0, 1)], run_down)
+        run_right = mdp.wall_right_2
+        self.assertListEqual([(1, 0), (0, 0)], run_right)
+
+    def test_policy_evaluation(self):
+        mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.6, reward_walk=1, reward_run=1, discount=0, wall_list=[(1, 1)], exit_list=[((0, 2), 1), ((1, 2), -1)])
+        mdp.value = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        walk_up = mdp.policy_evaluation(mdp.walk_up)
+        test.assert_array_almost_equal([[1.15, 2, 2.85], [1.9, 2.9, 3.9], [5.05, 8, 6.75]], walk_up)
+
+        run_up = mdp.policy_evaluation(mdp.run_up)
+        test.assert_array_almost_equal(np.array([[0.6 + 0.2 + 0.6, 1.2 + 0.4 + 0.4, 1.8 + 0.2 + 0.6],
+                                                 [2.4 + 0.8 + 0.8, 5, 3.6 + 1.2 + 1.2], 
+                                                 [0.6 + 1.4 + 1.8, 4.8 + 1.6 + 1.6, 1.8 + 1.4 + 1.8]]), run_up)
