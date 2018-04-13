@@ -146,3 +146,19 @@ class TestMDP(TestCase):
                                     [4., 3., 4., 4., 4., 2.],
                                     [4., 0., 4., 0., 0., 0.],
                                     [4., 4., 4., 4., 4., 2.]]), mdp.policy)
+
+    def test_output(self):
+        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-4)
+        mdp.policy = np.array([[7., 3., 0., 2., 6., 6.],
+                               [0., 0., 0., 0., 0., 2.],
+                               [4., 3., 4., 4., 4., 2.],
+                               [4., 0., 4., 0., 0., 0.],
+                               [4., 4., 4., 4., 4., 2.]])
+        str = mdp.out_put()
+        self.assertEqual(str,
+                         """Run Right,Walk Right,Exit,Walk Left,Run Left,Run Left
+Walk Up,None,Walk Up,Walk Up,Walk Up,Walk Left
+Run Up,Walk Right,Run Up,Run Up,Exit,Walk Left
+Run Up,Walk Up,Run Up,Walk Up,Walk Up,Walk Up
+Run Up,Run Up,Run Up,None,Run Up,Walk Left\n"""
+                         )

@@ -258,7 +258,46 @@ class MDP:
             value[location[0], location[1]] = utility
 
     def out_put(self):
-        self.policy[self.policy == 0] = "Walk Up3333"
+        for exit_entry in self.exit_list:
+            location = exit_entry[0]
+            self.policy[location[0], location[1]] = -1
+        for wall in self.wall_list:
+            self.policy[wall[0], wall[1]] = -2
+        N, D = self.policy.shape
+        str = ''
+        for i in range(N):
+            for j in range(D):
+                if self.policy[i][j] == -1:
+                    str += "Exit"
+                elif self.policy[i][j] == -2:
+                    str += "None"
+                elif self.policy[i][j] == 0:
+                    str += 'Walk Up'
+                elif self.policy[i][j] == 1:
+                    str += 'Walk Down'
+                elif self.policy[i][j] == 2:
+                    str += 'Walk Left'
+                elif self.policy[i][j] == 3:
+                    str += 'Walk Right'
+                elif self.policy[i][j] == 4:
+                    str += 'Run Up'
+                elif self.policy[i][j] == 5:
+                    str += 'Run Down'
+                elif self.policy[i][j] == 6:
+                    str += 'Run Left'
+                elif self.policy[i][j] == 7:
+                    str += 'Run Right'
+                elif self.policy[i][j] == 8:
+                    str += 'None'
+                elif self.policy[i][j] == 9:
+                    str += 'Exit'
+                if j == D - 1:
+                    str += "\n"
+                    # if i != N_row - 1:
+                    #     str += "\n"
+                else:
+                    str += ","
+        return str
 
 
 def main():
