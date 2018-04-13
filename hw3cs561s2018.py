@@ -257,6 +257,9 @@ class MDP:
             utility = exit_entry[1]
             value[location[0], location[1]] = utility
 
+    def out_put(self):
+        self.policy[self.policy == 0] = "Walk Up3333"
+
 
 def main():
     # def __init__(self, length, width, p_walk, p_run, reward_run, reward_walk, discount, exit_list, e=10e-5):
