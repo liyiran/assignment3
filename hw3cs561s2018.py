@@ -1,64 +1,58 @@
 #!/usr/bin/env python
 # coding=utf-8
 import numpy as np
-import sys
-import time
 import scipy.ndimage.interpolation as shift
 
 
 class MDP:
-    # def fix_wall_neighbor(self, new_value):
-    #     wall_list = self.wall_list
-    #     for wall in wall_list:
-    #         new_value[wall[0], wall[1]] = 0  # the wall should have 0 value
-    #         # fix 4 walk cells
-    #         left = (wall[0], wall[1] - 1)
-    #         right = (wall[0], wall[1] + 1)
-    #         up = (wall[0] - 1, wall[1])
-    #         down = (wall[0] + 1, wall[1])
-    #         # fix 4 run cells
-    #         left_left = (wall[0], wall[1] - 2)
-    #         right_right = (wall[0], wall[1] + 2)
-    #         up_up = (wall[0] - 2, wall[1])
-    #         down_down = (wall[0] + 2, wall[1])
+    eps = np.finfo(np.float64).eps
 
     def policy_evaluation(self, action):
+        has_wall = bool(self.wall_dict)
         if action < 4:  # walk
             new_value_up = shift.shift(self.value, (1, 0), mode="nearest")
-            wall_list = self.wall_dict[self.walk_up]
-            new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+            if has_wall:
+                wall_list = self.wall_dict[self.walk_up]
+                new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
             new_value_right = shift.shift(self.value, (0, -1), mode="nearest")
-            wall_list = self.wall_dict[self.walk_right]
-            new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+            if has_wall:
+                wall_list = self.wall_dict[self.walk_right]
+                new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
             new_value_down = shift.shift(self.value, (-1, 0), mode="nearest")
-            wall_list = self.wall_dict[self.walk_down]
-            new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+            if has_wall:
+                wall_list = self.wall_dict[self.walk_down]
+                new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
             new_value_left = shift.shift(self.value, (0, 1), mode="nearest")
-            wall_list = self.wall_dict[self.walk_left]
-            new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+            if has_wall:
+                wall_list = self.wall_dict[self.walk_left]
+                new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
         else:
             new_value_up = shift.shift(self.value, (2, 0), mode="reflect")
             new_value_up[[0, 1]] = new_value_up[[1, 0]]  # swap the first two rows
-            wall_list = self.wall_dict[self.run_up]
-            new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+            if has_wall:
+                wall_list = self.wall_dict[self.run_up]
+                new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
             new_value_right = shift.shift(self.value, (0, -2), mode="reflect")
             new_value_right[:, [-1, -2]] = new_value_right[:, [-2, -1]]
-            wall_list = self.wall_dict[self.run_right]
-            new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+            if has_wall:
+                wall_list = self.wall_dict[self.run_right]
+                new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
             new_value_down = shift.shift(self.value, (-2, 0), mode="reflect")
             new_value_down[[-1, -2]] = new_value_down[[-2, -1]]
-            wall_list = self.wall_dict[self.run_down]
-            new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+            if has_wall:
+                wall_list = self.wall_dict[self.run_down]
+                new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
             new_value_left = shift.shift(self.value, (0, 2), mode="reflect")
             new_value_left[:, [0, 1]] = new_value_left[:, [1, 0]]
-            wall_list = self.wall_dict[self.run_left]
-            new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+            if has_wall:
+                wall_list = self.wall_dict[self.run_left]
+                new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
         new_value = np.multiply(np.squeeze(self.p[:, :, self.up, action]), new_value_up) + \
                     np.multiply(np.squeeze(self.p[:, :, self.down, action]), new_value_down) + \
@@ -69,20 +63,55 @@ class MDP:
     def value_iteration(self):
         u_p = 0
         delta = 0
-        print(time.time())
-        while delta < self.e * (1 - self.discount) / self.discount:
-            print(time.time())
-            u = u_p
-            delta = 0
-            max = np.full((self.length, self.width), -10000)
-            expect = self.policy_evaluation()
+        # print(time.time())
+        discount = self.e * (1 - self.discount) / self.discount
+        # while delta >= discount:
+        while True:
+            # print(time.time())
+            # self.value = u_p  # u should be self.value
+            # delta = 0
+            # max = np.full((self.length, self.width), -10000)
+            # expect = self.policy_evaluation()
+            max_value = None
+            # print(self.value)
+            # print("-----")
+            # print(self.policy)
+            # print("-----")
+            u_p = self.value
+            current_policy = np.zeros(self.policy.shape)
             for action in range(8):
-                if action < 4:
-                    u_p = np.maximum(max, self.policy_evaluation(action)) + self.reward_walk
+                # if action == self.walk_up:
+                #     max_value = self.policy_evaluation(action)  # base value for walk_up
+                #     self.policy[max_value > u_p] = action
+                #     u_p = max_value * self.discount + self.reward_walk
+                if action < 4:  # other actions
+                    action_value = self.policy_evaluation(action) * self.discount + self.reward_walk
+                    if max_value is None:
+                        max_value = action_value
+                        current_policy = np.zeros(self.policy.shape)
+                    current_policy[action_value - max_value > self.eps] = action  # if the action has a better value, then the policy should be this action
+                    max_value = np.maximum(max_value, action_value)  # walk
+                    # u_p = max_value * self.discount + self.reward_walk
+                    # max_value = np.maximum(action_value * self.discount + self.reward_walk, max_value)
+                    # u_p = np.maximum(max_value, self.policy_evaluation(action)) + self.reward_walk
                 else:
-                    u_p = np.maximum(max, self.policy_evaluation(action)) + self.reward_walk
-                if np.min(np.abs(u - u_p)) > delta:
-                    delta = np.min(np.abs(u - u_p))
+                    action_value = self.policy_evaluation(action) * self.discount + self.reward_run
+                    current_policy[action_value - max_value > self.eps] = action
+                    # self.policy[action_value > max_value] = action
+                    max_value = np.maximum(max_value, action_value)  # run
+                    # u_p = max_value * self.discount + self.reward_run
+                    # u_p = np.maximum(max_value, self.policy_evaluation(action)) + self.reward_walk
+            self.fix_exit(max_value)
+            min_value = np.amax(np.abs(self.value - max_value))
+            # if min_value > delta:
+            delta = min_value
+            # print(delta)
+            self.value = max_value
+            self.policy = current_policy
+            print(max_value)
+            print(current_policy)
+            if delta < discount:
+                return
 
     def build_wall(self):
         for wall in self.wall_list:
@@ -142,6 +171,7 @@ class MDP:
         if wall_list is None:
             wall_list = []
         self.wall_list = wall_list
+        self.exit_list = exit_list
         self.wall_up_1 = []
         self.wall_left_1 = []
         self.wall_down_1 = []
@@ -163,17 +193,25 @@ class MDP:
         self.left = 1
         self.down = 2
         self.right = 3
-        self.direction_enum = (self.up, self.left, self.right, self.down)
+        self.direction_enum = (self.up, self.down, self.left, self.right)
+        # self.walk_up = 0
+        # self.walk_left = 1
+        # self.walk_down = 2
+        # self.walk_right = 3
         self.walk_up = 0
-        self.walk_left = 1
-        self.walk_down = 2
+        self.walk_down = 1
+        self.walk_left = 2
         self.walk_right = 3
 
+        # self.run_up = 4
+        # self.run_left = 5
+        # self.run_down = 6
+        # self.run_right = 7
         self.run_up = 4
-        self.run_left = 5
-        self.run_down = 6
+        self.run_down = 5
+        self.run_left = 6
         self.run_right = 7
-        self.action_enum = (self.walk_up, self.walk_left, self.walk_right, self.walk_down, self.run_up, self.run_left, self.run_right, self.run_down)
+        self.action_enum = (self.walk_up, self.walk_down, self.walk_left, self.walk_right, self.run_up, self.run_down, self.run_left, self.run_right)
         self.p = np.zeros((length, width, 4, 8))  # four directions and 8 actions
 
         self.p[:, :, self.up, self.walk_up] = p_walk
@@ -211,10 +249,13 @@ class MDP:
         self.policy = np.zeros((length, width))
         self.value = np.zeros((length, width))
         self.build_wall()
-        for exit_entry in exit_list:
+        self.fix_exit(self.value)
+
+    def fix_exit(self, value):
+        for exit_entry in self.exit_list:
             location = exit_entry[0]
             utility = exit_entry[1]
-            self.value[location[0], location[1]] = utility
+            value[location[0], location[1]] = utility
 
 
 def main():
