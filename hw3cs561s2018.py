@@ -66,17 +66,7 @@ class MDP:
         # while delta >= discount:
         i = 0
         while True:
-            # print(time.time())
-            # self.value = u_p  # u should be self.value
-            # delta = 0
-            # max = np.full((self.length, self.width), -10000)
-            # expect = self.policy_evaluation()
             max_value = None
-            # print(self.value)
-            # print("-----")
-            # print(self.policy)
-            # print("-----")
-            u_p = self.value
             current_policy = np.zeros(self.policy.shape)
             for action in range(8):
                 if action < 4:  # other actions
@@ -92,74 +82,63 @@ class MDP:
                     #     print(action)
                     #     print(repr(diff[0, 2]))
                     #     print("---")
-                    # u_p = max_value * self.discount + self.reward_walk
                     # max_value = np.maximum(action_value * self.discount + self.reward_walk, max_value)
-                    # u_p = np.maximum(max_value, self.policy_evaluation(action)) + self.reward_walk
                 else:
                     action_value = self.policy_evaluation(action) * self.discount + self.reward_run
-                    # current_policy[action_value - max_value > self.e] = action
+                    # current_policy[action_value - max_value > 1e-13] = action
                     current_policy[action_value > max_value] = action
-                    # self.policy[action_value > max_value] = action
-                    max_value = np.maximum(max_value, action_value)  # run
-                    # if action == self.run_up:
+                    # if action_value[4, -5] > max_value[4, -5]:
                     #     diff = action_value - max_value
                     #     print(action)
-                    #     print(repr(diff[0, 2]))
+                    #     print(repr(diff[4, -5]))
                     #     print("---")
+                    max_value = np.maximum(max_value, action_value)  # run
             self.fix_exit(max_value)
-            min_value = np.amax(np.abs(self.value - max_value))
+            delta = np.amax(np.abs(self.value - max_value))
             # if min_value > delta:
-            delta = min_value
+            # delta = min_value
             # print(delta)
             self.value = max_value
             # print(max_value[2:6, 53:57])
             self.policy = current_policy
-            # print(self.policy)
+            # print(self.policy[4, -5])
             # print(max_value)
             # print(current_policy[0, -1])
             i += 1
             # print(i)
-            if delta < discount:
+            if delta <= discount:
                 print(i)
                 return
 
     def build_wall(self):
         for wall in self.wall_list:
-            # self.wall_walk_up.append((wall[0], wall[1]))
             if self.is_inside(wall[0] + 1, wall[1]):
                 self.wall_up_1.append((wall[0] + 1, wall[1]))
 
-            # self.wall_run_up.append((wall[0], wall[1]))
             if self.is_inside(wall[0] + 1, wall[1]):
                 self.wall_up_2.append((wall[0] + 1, wall[1]))
             if self.is_inside(wall[0] + 2, wall[1]):
                 self.wall_up_2.append((wall[0] + 2, wall[1]))
 
-            # self.wall_walk_left.append((wall[0], wall[1]))
             if self.is_inside(wall[0], wall[1] + 1):
                 self.wall_left_1.append((wall[0], wall[1] + 1))
 
-            # self.wall_run_left.append((wall[0], wall[1]))
             if self.is_inside(wall[0], wall[1] + 1):
                 self.wall_left_2.append((wall[0], wall[1] + 1))
             if self.is_inside(wall[0], wall[1] + 2):
                 self.wall_left_2.append((wall[0], wall[1] + 2))
 
-            # self.wall_walk_down.append((wall[0], wall[1]))
             if self.is_inside(wall[0] - 1, wall[1]):
                 self.wall_down_1.append((wall[0] - 1, wall[1]))
-            # self.wall_run_down.append((wall[0], wall[1]))
 
             if self.is_inside(wall[0] - 1, wall[1]):
                 self.wall_down_2.append((wall[0] - 1, wall[1]))
             if self.is_inside(wall[0] - 2, wall[1]):
                 self.wall_down_2.append((wall[0] - 2, wall[1]))
 
-            # self.wall_walk_right.append((wall[0], wall[1]))
             if self.is_inside(wall[0], wall[1] - 1):
                 self.wall_right_1.append((wall[0], wall[1] - 1))
 
-            # self.wall_run_right.append((wall[0], wall[1]))
             if self.is_inside(wall[0], wall[1] - 1):
                 self.wall_right_2.append((wall[0], wall[1] - 1))
             if self.is_inside(wall[0], wall[1] - 2):
@@ -214,75 +193,48 @@ class MDP:
         self.run_left = 6
         self.run_right = 7
         self.action_enum = (self.walk_up, self.walk_down, self.walk_left, self.walk_right, self.run_up, self.run_down, self.run_left, self.run_right)
-        self.p = np.zeros((length, width, 4, 8), dtype="float64")  # four directions and 8 actions
-        self.action_p = np.zeros((4, 8), dtype="float64")
-
-        # self.p[:, :, self.up, self.walk_up] = p_walk
-        # self.p[:, :, self.left, self.walk_up] = .5 * (1 - p_walk)
-        # self.p[:, :, self.right, self.walk_up] = .5 * (1 - p_walk)
+        if self.length * self.width <= 3000:
+            self.action_p = np.zeros((4, 8), dtype=np.clongfloat)
+        else:
+            self.action_p = np.zeros((4, 8), dtype=np.float)
 
         self.action_p[self.up, self.walk_up] = p_walk
         self.action_p[self.left, self.walk_up] = .5 * (1 - p_walk)
         self.action_p[self.right, self.walk_up] = .5 * (1 - p_walk)
 
-        # self.p[:, :, self.right, self.walk_right] = p_walk
-        # self.p[:, :, self.up, self.walk_right] = .5 * (1 - p_walk)
-        # self.p[:, :, self.down, self.walk_right] = .5 * (1 - p_walk)
-
         self.action_p[self.right, self.walk_right] = p_walk
         self.action_p[self.up, self.walk_right] = .5 * (1 - p_walk)
         self.action_p[self.down, self.walk_right] = .5 * (1 - p_walk)
-
-        # self.p[:, :, self.down, self.walk_down] = p_walk
-        # self.p[:, :, self.left, self.walk_down] = .5 * (1 - p_walk)
-        # self.p[:, :, self.right, self.walk_down] = .5 * (1 - p_walk)
 
         self.action_p[self.down, self.walk_down] = p_walk
         self.action_p[self.left, self.walk_down] = .5 * (1 - p_walk)
         self.action_p[self.right, self.walk_down] = .5 * (1 - p_walk)
 
-        # self.p[:, :, self.left, self.walk_left] = p_walk
-        # self.p[:, :, self.up, self.walk_left] = .5 * (1 - p_walk)
-        # self.p[:, :, self.down, self.walk_left] = .5 * (1 - p_walk)
-
         self.action_p[self.left, self.walk_left] = p_walk
         self.action_p[self.up, self.walk_left] = .5 * (1 - p_walk)
         self.action_p[self.down, self.walk_left] = .5 * (1 - p_walk)
-
-        # self.p[:, :, self.up, self.run_up] = p_run
-        # self.p[:, :, self.left, self.run_up] = .5 * (1 - p_run)
-        # self.p[:, :, self.right, self.run_up] = .5 * (1 - p_run)
 
         self.action_p[self.up, self.run_up] = p_run
         self.action_p[self.left, self.run_up] = .5 * (1 - p_run)
         self.action_p[self.right, self.run_up] = .5 * (1 - p_run)
 
-        # self.p[:, :, self.right, self.run_right] = p_run
-        # self.p[:, :, self.up, self.run_right] = .5 * (1 - p_run)
-        # self.p[:, :, self.down, self.run_right] = .5 * (1 - p_run)
-
         self.action_p[self.right, self.run_right] = p_run
         self.action_p[self.up, self.run_right] = .5 * (1 - p_run)
         self.action_p[self.down, self.run_right] = .5 * (1 - p_run)
 
-        # self.p[:, :, self.down, self.run_down] = p_run
-        # self.p[:, :, self.left, self.run_down] = .5 * (1 - p_run)
-        # self.p[:, :, self.right, self.run_down] = .5 * (1 - p_run)
-
         self.action_p[self.down, self.run_down] = p_run
         self.action_p[self.left, self.run_down] = .5 * (1 - p_run)
         self.action_p[self.right, self.run_down] = .5 * (1 - p_run)
-
-        # self.p[:, :, self.left, self.run_left] = p_run
-        # self.p[:, :, self.up, self.run_left] = .5 * (1 - p_run)
-        # self.p[:, :, self.down, self.run_left] = .5 * (1 - p_run)
 
         self.action_p[self.left, self.run_left] = p_run
         self.action_p[self.up, self.run_left] = .5 * (1 - p_run)
         self.action_p[self.down, self.run_left] = .5 * (1 - p_run)
 
         self.policy = np.zeros((length, width))
-        self.value = np.zeros((length, width), dtype="float64")
+        if self.length * self.width <= 3000:
+            self.value = np.zeros((length, width), dtype=np.clongfloat)
+        else:
+            self.value = np.zeros((length, width), dtype=np.float)
         self.build_wall()
         self.fix_exit(self.value)
         self.has_wall = bool(self.wall_dict)
@@ -329,8 +281,6 @@ class MDP:
                     str += 'Exit'
                 if j == D - 1:
                     str += "\n"
-                    # if i != N_row - 1:
-                    #     str += "\n"
                 else:
                     str += ","
         return str
@@ -380,8 +330,13 @@ class Configuration:
 
 def main():
     # def __init__(self, length, width, p_walk, p_run, reward_run, reward_walk, discount, exit_list, e=10e-5):
-    mdp = MDP(length=500, width=600, p_walk=1, p_run=1, reward_run=0, reward_walk=0, discount=0.7, exit_list=[((100, 100), 10)])
+    configuration = Configuration()
+    width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input.txt")
+    mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
     mdp.value_iteration()
+    str = mdp.out_put()
+    with open("output.txt", 'w') as f:
+        f.write(str)
 
 
 if __name__ == "__main__":

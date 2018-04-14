@@ -182,7 +182,7 @@ Run Up,Run Up,Run Up,None,Run Up,Walk Left\n"""
     def test_integration2(self):
         configuration = Configuration()
         width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input2.txt")
-        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-8)
+        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
         mdp.value_iteration()
         str = mdp.out_put()
         with open("my_output2.txt", 'w') as f:
@@ -197,7 +197,7 @@ Run Up,Run Up,Run Up,None,Run Up,Walk Left\n"""
         mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
         mdp.value_iteration()
         str = mdp.out_put()
-        with open("my_output2.txt", 'w') as f:
+        with open("my_output3.txt", 'w') as f:
             f.write(str)
         with open("output3.txt", "r") as f:
             data = f.read()
