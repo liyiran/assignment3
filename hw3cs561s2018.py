@@ -66,6 +66,7 @@ class MDP:
         # print(time.time())
         discount = self.e * (1 - self.discount) / self.discount
         # while delta >= discount:
+        i = 0
         while True:
             # print(time.time())
             # self.value = u_p  # u should be self.value
@@ -80,36 +81,44 @@ class MDP:
             u_p = self.value
             current_policy = np.zeros(self.policy.shape)
             for action in range(8):
-                # if action == self.walk_up:
-                #     max_value = self.policy_evaluation(action)  # base value for walk_up
-                #     self.policy[max_value > u_p] = action
-                #     u_p = max_value * self.discount + self.reward_walk
                 if action < 4:  # other actions
                     action_value = self.policy_evaluation(action) * self.discount + self.reward_walk
                     if max_value is None:
                         max_value = action_value
                         current_policy = np.zeros(self.policy.shape)
-                    current_policy[action_value - max_value > self.eps] = action  # if the action has a better value, then the policy should be this action
+                    current_policy[action_value - max_value > self.e] = action  # if the action has a better value, then the policy should be this action
+                    # current_policy[action_value > max_value] = action  # if the action has a better value, then the policy should be this action
                     max_value = np.maximum(max_value, action_value)  # walk
+                    # if action == self.walk_up:
+                    #     diff = action_value - max_value
+                    #     print(action)
+                    #     print(repr(diff[0, 2]))
+                    #     print("---")
                     # u_p = max_value * self.discount + self.reward_walk
                     # max_value = np.maximum(action_value * self.discount + self.reward_walk, max_value)
                     # u_p = np.maximum(max_value, self.policy_evaluation(action)) + self.reward_walk
                 else:
                     action_value = self.policy_evaluation(action) * self.discount + self.reward_run
-                    current_policy[action_value - max_value > self.eps] = action
+                    current_policy[action_value - max_value > self.e] = action
+                    # current_policy[action_value > max_value] = action
                     # self.policy[action_value > max_value] = action
                     max_value = np.maximum(max_value, action_value)  # run
-                    # u_p = max_value * self.discount + self.reward_run
-                    # u_p = np.maximum(max_value, self.policy_evaluation(action)) + self.reward_walk
+                    # if action == self.run_up:
+                    #     diff = action_value - max_value
+                    #     print(action)
+                    #     print(repr(diff[0, 2]))
+                    #     print("---")
             self.fix_exit(max_value)
             min_value = np.amax(np.abs(self.value - max_value))
             # if min_value > delta:
             delta = min_value
             # print(delta)
             self.value = max_value
+            # print(max_value[2:6, 53:57])
             self.policy = current_policy
-            print(max_value)
-            print(current_policy)
+            # print(self.policy[4,55])
+            # print(current_policy[0, -1])
+            i += 1
             if delta < discount:
                 return
 
@@ -167,7 +176,7 @@ class MDP:
     def is_inside(self, x, y):
         return 0 <= x < self.length and 0 <= y < self.width
 
-    def __init__(self, length, width, p_walk, p_run, reward_run, reward_walk, discount, exit_list, wall_list=None, e=10e-5):
+    def __init__(self, length, width, p_walk, p_run, reward_run, reward_walk, discount, exit_list, wall_list=None, e=1e-8):
         if wall_list is None:
             wall_list = []
         self.wall_list = wall_list
@@ -194,25 +203,17 @@ class MDP:
         self.down = 2
         self.right = 3
         self.direction_enum = (self.up, self.down, self.left, self.right)
-        # self.walk_up = 0
-        # self.walk_left = 1
-        # self.walk_down = 2
-        # self.walk_right = 3
         self.walk_up = 0
         self.walk_down = 1
         self.walk_left = 2
         self.walk_right = 3
 
-        # self.run_up = 4
-        # self.run_left = 5
-        # self.run_down = 6
-        # self.run_right = 7
         self.run_up = 4
         self.run_down = 5
         self.run_left = 6
         self.run_right = 7
         self.action_enum = (self.walk_up, self.walk_down, self.walk_left, self.walk_right, self.run_up, self.run_down, self.run_left, self.run_right)
-        self.p = np.zeros((length, width, 4, 8))  # four directions and 8 actions
+        self.p = np.zeros((length, width, 4, 8), dtype="float64")  # four directions and 8 actions
 
         self.p[:, :, self.up, self.walk_up] = p_walk
         self.p[:, :, self.left, self.walk_up] = .5 * (1 - p_walk)
@@ -247,7 +248,7 @@ class MDP:
         self.p[:, :, self.down, self.run_left] = .5 * (1 - p_run)
 
         self.policy = np.zeros((length, width))
-        self.value = np.zeros((length, width))
+        self.value = np.zeros((length, width), dtype="float64")
         self.build_wall()
         self.fix_exit(self.value)
 
@@ -298,6 +299,48 @@ class MDP:
                 else:
                     str += ","
         return str
+
+
+class Configuration:
+    def read_file(self, path):
+        lines = []
+        with open(path, 'r') as f:
+            for line in f:
+                line = line.strip('\n')
+                lines.append(line)
+
+        grid_size = lines[0]
+        wall_cells_num = int(lines[1])
+        wall_cells_pos = lines[2:2 + wall_cells_num]
+        term_states_num = int(lines[2 + wall_cells_num])
+        term_states_pos = lines[3 + wall_cells_num:3 + wall_cells_num + term_states_num]
+        tran_model = lines[3 + wall_cells_num + term_states_num]
+        rewards = lines[4 + wall_cells_num + term_states_num]
+        discount = np.float_(lines[5 + wall_cells_num + term_states_num])
+        grid_sz = grid_size.split(",")
+        length, width = int(grid_sz[0]), int(grid_sz[1])
+        wall_list = []
+        for ele in wall_cells_pos:
+            ele = ele.split(" ")
+            for ele2 in ele:
+                ele2 = ele2.split(",")
+                pnt = (length - int(ele2[0]), int(ele2[1]) - 1)
+                wall_list.append(pnt)
+        assert len(wall_list) == wall_cells_num
+        term_list = []
+        for ele in term_states_pos:
+            ele = ele.split(" ")
+            for ele2 in ele:
+                ele2 = ele2.split(",")
+                pnt = (length - int(ele2[0]), int(ele2[1]) - 1)
+                utilize = np.float_(ele2[2])
+                term_list.append((pnt, utilize))
+        assert len(term_list) == term_states_num
+        tran_m = tran_model.split(",")
+        p_walk, p_run = np.float_(tran_m[0]), np.float_(tran_m[1])
+        rw = rewards.split(",")
+        r_walk, r_run = np.float_(rw[0]), np.float_(rw[1])
+        return width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, term_list
 
 
 def main():

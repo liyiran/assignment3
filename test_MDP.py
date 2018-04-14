@@ -4,6 +4,7 @@ import numpy as np
 import numpy.testing as test
 import scipy.ndimage.interpolation as shift
 import unittest
+from hw3cs561s2018 import Configuration
 
 
 class TestMDP(TestCase):
@@ -129,9 +130,9 @@ class TestMDP(TestCase):
                                                  [0.6 + 1.4 + 1.8, 4.8 + 1.6 + 1.6, 1.8 + 1.4 + 1.8]]), run_up)
 
     def test_small_value_iteration_no_wall(self):
-        mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.7, reward_walk=0, reward_run=0, discount=0.1, exit_list=[((0, 2), 1), ((1, 2), -1)])
+        mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.7, reward_walk=0, reward_run=0, discount=0.1, e=1e-8, exit_list=[((0, 2), 1), ((1, 2), -1)])
         mdp.value_iteration()
-        test.assert_array_almost_equal(np.array([[7, 3, 0], [0, 2, 0], [4, 4, 4]]), mdp.policy)
+        test.assert_array_almost_equal(np.array([[7, 3, 4], [0, 2, 0], [4, 4, 4]]), mdp.policy)
 
     def test_small_value_iteration_1_wall(self):
         mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.7, reward_walk=0, reward_run=0, wall_list=[(1, 1)], discount=0.1, exit_list=[((0, 2), 1), ((1, 2), -1)])
@@ -139,7 +140,7 @@ class TestMDP(TestCase):
         test.assert_array_almost_equal(np.array([[7, 3, 0], [0, 2, 0], [4, 3, 4]]), mdp.policy)
 
     def test_case1(self):
-        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-4)
+        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-8)
         mdp.value_iteration()
         test.assert_equal(np.array([[7., 3., 0., 2., 6., 6.],
                                     [0., 0., 0., 0., 0., 2.],
@@ -148,7 +149,7 @@ class TestMDP(TestCase):
                                     [4., 4., 4., 4., 4., 2.]]), mdp.policy)
 
     def test_output(self):
-        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-4)
+        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-8)
         mdp.policy = np.array([[7., 3., 0., 2., 6., 6.],
                                [0., 0., 0., 0., 0., 2.],
                                [4., 3., 4., 4., 4., 2.],
@@ -162,3 +163,30 @@ Run Up,Walk Right,Run Up,Run Up,Exit,Walk Left
 Run Up,Walk Up,Run Up,Walk Up,Walk Up,Walk Up
 Run Up,Run Up,Run Up,None,Run Up,Walk Left\n"""
                          )
+
+    def test_read_configuration(self):
+        configuration = Configuration()
+        # (width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], 
+        # discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-4)
+        width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input1.txt")
+        self.assertEqual(width, 6)
+        self.assertEqual(length, 5)
+        self.assertEqual(0.8, p_walk)
+        self.assertEqual(0.6, p_run)
+        self.assertEqual(-0.3, r_walk)
+        self.assertEqual(-0.2, r_run)
+        self.assertListEqual([(1, 1), (4, 3)], wall_list)
+        self.assertEqual(0.7, discount)
+        self.assertListEqual([((0, 2), 10), ((2, 4), 5)], exit_list)
+
+    def test_integration2(self):
+        configuration = Configuration()
+        width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input2.txt")
+        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-8)
+        mdp.value_iteration()
+        str = mdp.out_put()
+        with open("my_output2.txt", 'w') as f:
+            f.write(str)
+        with open("output2.txt", "r") as f:
+            data = f.read()
+            self.assertEqual(data, str)
