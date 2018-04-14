@@ -2,6 +2,7 @@
 # coding=utf-8
 import numpy as np
 import scipy.ndimage.interpolation as shift
+import numpy.testing as test
 
 
 class MDP:
@@ -10,46 +11,53 @@ class MDP:
     def policy_evaluation(self, action):
         has_wall = bool(self.wall_dict)
         if action < 4:  # walk
-            new_value_up = shift.shift(self.value, (1, 0), mode="nearest")
+            # new_value_up = shift.shift(self.value, (1, 0), mode="nearest")
+            new_value_up = np.delete(np.concatenate((self.value[0:1, ...], self.value), axis=0), -1, axis=0)
             if has_wall:
                 wall_list = self.wall_dict[self.walk_up]
                 new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
-            new_value_right = shift.shift(self.value, (0, -1), mode="nearest")
+            # new_value_right = shift.shift(self.value, (0, -1), mode="nearest")
+            new_value_right = np.delete(np.concatenate((self.value, self.value[..., -1:]), axis=1), 0, axis=1)
             if has_wall:
                 wall_list = self.wall_dict[self.walk_right]
                 new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
-            new_value_down = shift.shift(self.value, (-1, 0), mode="nearest")
+            # new_value_down = shift.shift(self.value, (-1, 0), mode="nearest")
+            new_value_down = np.delete(np.concatenate((self.value, self.value[-1:, ...]), axis=0), 0, axis=0)
             if has_wall:
                 wall_list = self.wall_dict[self.walk_down]
                 new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
-            new_value_left = shift.shift(self.value, (0, 1), mode="nearest")
+            # new_value_left = shift.shift(self.value, (0, 1), mode="nearest")
+            new_value_left = np.delete(np.concatenate((self.value[..., 0:1], self.value), axis=1), -1, axis=1)
             if has_wall:
                 wall_list = self.wall_dict[self.walk_left]
                 new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
         else:
-            new_value_up = shift.shift(self.value, (2, 0), mode="reflect")
-            new_value_up[[0, 1]] = new_value_up[[1, 0]]  # swap the first two rows
+            one_step = np.delete(np.concatenate((self.value[0:2:, ...], self.value), axis=0), -1, axis=0)
+            new_value_up = np.delete(one_step, -1, axis=0)
             if has_wall:
                 wall_list = self.wall_dict[self.run_up]
                 new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
-            new_value_right = shift.shift(self.value, (0, -2), mode="reflect")
-            new_value_right[:, [-1, -2]] = new_value_right[:, [-2, -1]]
+            one_step = np.delete(np.concatenate((self.value, self.value[..., -2:]), axis=1), 0, axis=1)
+            new_value_right = np.delete(one_step, 0, axis=1)
             if has_wall:
                 wall_list = self.wall_dict[self.run_right]
                 new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
-            new_value_down = shift.shift(self.value, (-2, 0), mode="reflect")
-            new_value_down[[-1, -2]] = new_value_down[[-2, -1]]
+            one_step = np.delete(np.concatenate((self.value, self.value[-2:, ...]), axis=0), 0, axis=0)
+            new_value_down = np.delete(one_step, 0, axis=0)
             if has_wall:
                 wall_list = self.wall_dict[self.run_down]
                 new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
-            new_value_left = shift.shift(self.value, (0, 2), mode="reflect")
-            new_value_left[:, [0, 1]] = new_value_left[:, [1, 0]]
+            # old_value_left = shift.shift(self.value, (0, 2), mode="reflect")
+            # old_value_left[:, [0, 1]] = old_value_left[:, [1, 0]]
+            one_step = np.delete(np.concatenate((self.value[..., 0:2], self.value), axis=1), -1, axis=1)
+            new_value_left = np.delete(one_step, -1, axis=1)
+            # test.assert_array_almost_equal(old_value_left, new_value_left)
             if has_wall:
                 wall_list = self.wall_dict[self.run_left]
                 new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
@@ -86,8 +94,8 @@ class MDP:
                     if max_value is None:
                         max_value = action_value
                         current_policy = np.zeros(self.policy.shape)
-                    current_policy[action_value - max_value > self.e] = action  # if the action has a better value, then the policy should be this action
-                    # current_policy[action_value > max_value] = action  # if the action has a better value, then the policy should be this action
+                    # current_policy[action_value - max_value > self.e] = action  # if the action has a better value, then the policy should be this action
+                    current_policy[action_value > max_value] = action  # if the action has a better value, then the policy should be this action
                     max_value = np.maximum(max_value, action_value)  # walk
                     # if action == self.walk_up:
                     #     diff = action_value - max_value
@@ -99,8 +107,8 @@ class MDP:
                     # u_p = np.maximum(max_value, self.policy_evaluation(action)) + self.reward_walk
                 else:
                     action_value = self.policy_evaluation(action) * self.discount + self.reward_run
-                    current_policy[action_value - max_value > self.e] = action
-                    # current_policy[action_value > max_value] = action
+                    # current_policy[action_value - max_value > self.e] = action
+                    current_policy[action_value > max_value] = action
                     # self.policy[action_value > max_value] = action
                     max_value = np.maximum(max_value, action_value)  # run
                     # if action == self.run_up:
@@ -116,10 +124,12 @@ class MDP:
             self.value = max_value
             # print(max_value[2:6, 53:57])
             self.policy = current_policy
-            # print(self.policy[4,55])
+            # print(self.policy)
+            # print(max_value)
             # print(current_policy[0, -1])
             i += 1
             if delta < discount:
+                print(i)
                 return
 
     def build_wall(self):

@@ -130,14 +130,14 @@ class TestMDP(TestCase):
                                                  [0.6 + 1.4 + 1.8, 4.8 + 1.6 + 1.6, 1.8 + 1.4 + 1.8]]), run_up)
 
     def test_small_value_iteration_no_wall(self):
-        mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.7, reward_walk=0, reward_run=0, discount=0.1, e=1e-8, exit_list=[((0, 2), 1), ((1, 2), -1)])
+        mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.7, reward_walk=0, reward_run=0, discount=0.1, e=1e-10, exit_list=[((0, 2), 1), ((1, 2), -1)])
         mdp.value_iteration()
-        test.assert_array_almost_equal(np.array([[7, 3, 4], [0, 2, 0], [4, 4, 4]]), mdp.policy)
+        test.assert_array_almost_equal(np.array([[7, 3, 7], [0, 2, 0], [4, 4, 4]]), mdp.policy)
 
     def test_small_value_iteration_1_wall(self):
         mdp = MDP(width=3, length=3, p_walk=0.7, p_run=0.7, reward_walk=0, reward_run=0, wall_list=[(1, 1)], discount=0.1, exit_list=[((0, 2), 1), ((1, 2), -1)])
         mdp.value_iteration()
-        test.assert_array_almost_equal(np.array([[7, 3, 0], [0, 2, 0], [4, 3, 4]]), mdp.policy)
+        test.assert_array_almost_equal(np.array([[7, 3, 0], [0, 2, 0], [7, 3, 4]]), mdp.policy)
 
     def test_case1(self):
         mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-8)
@@ -190,3 +190,12 @@ Run Up,Run Up,Run Up,None,Run Up,Walk Left\n"""
         with open("output2.txt", "r") as f:
             data = f.read()
             self.assertEqual(data, str)
+
+    def test_integration3(self):
+        configuration = Configuration()
+        width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input3.txt")
+        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
+        mdp.value_iteration()
+        str = mdp.out_put()
+        with open("my_output2.txt", 'w') as f:
+            f.write(str)
