@@ -12,53 +12,47 @@ class MDP:
 
         if action < 4:  # walk
             new_value_up = np.delete(np.concatenate((self.value[0:1, ...], self.value), axis=0), -1, axis=0)
+            new_value_right = np.delete(np.concatenate((self.value, self.value[..., -1:]), axis=1), 0, axis=1)
+            new_value_down = np.delete(np.concatenate((self.value, self.value[-1:, ...]), axis=0), 0, axis=0)
+            new_value_left = np.delete(np.concatenate((self.value[..., 0:1], self.value), axis=1), -1, axis=1)
             if self.has_wall:
                 wall_list = self.wall_dict[self.walk_up]
                 new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
-
-            new_value_right = np.delete(np.concatenate((self.value, self.value[..., -1:]), axis=1), 0, axis=1)
-            if self.has_wall:
                 wall_list = self.wall_dict[self.walk_right]
                 new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
-
-            new_value_down = np.delete(np.concatenate((self.value, self.value[-1:, ...]), axis=0), 0, axis=0)
-            if self.has_wall:
                 wall_list = self.wall_dict[self.walk_down]
                 new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
-
-            new_value_left = np.delete(np.concatenate((self.value[..., 0:1], self.value), axis=1), -1, axis=1)
-            if self.has_wall:
                 wall_list = self.wall_dict[self.walk_left]
                 new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+
         else:
-            one_step = np.delete(np.concatenate((self.value[0:2:, ...], self.value), axis=0), -1, axis=0)
-            new_value_up = np.delete(one_step, -1, axis=0)
+            if self.length > 2:
+                one_step = np.delete(np.concatenate((self.value[0:2:, ...], self.value), axis=0), -1, axis=0)
+                new_value_up = np.delete(one_step, -1, axis=0)
+                one_step = np.delete(np.concatenate((self.value, self.value[-2:, ...]), axis=0), 0, axis=0)
+                new_value_down = np.delete(one_step, 0, axis=0)
+            else:
+                new_value_up = self.value
+                new_value_down = self.value
+            if self.width > 2:
+                one_step = np.delete(np.concatenate((self.value, self.value[..., -2:]), axis=1), 0, axis=1)
+                new_value_right = np.delete(one_step, 0, axis=1)
+                one_step = np.delete(np.concatenate((self.value[..., 0:2], self.value), axis=1), -1, axis=1)
+                new_value_left = np.delete(one_step, -1, axis=1)
+            else:
+                new_value_right = self.value
+                new_value_left = self.value
             if self.has_wall:
                 wall_list = self.wall_dict[self.run_up]
                 new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
-
-            one_step = np.delete(np.concatenate((self.value, self.value[..., -2:]), axis=1), 0, axis=1)
-            new_value_right = np.delete(one_step, 0, axis=1)
-            if self.has_wall:
-                wall_list = self.wall_dict[self.run_right]
-                new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
-
-            one_step = np.delete(np.concatenate((self.value, self.value[-2:, ...]), axis=0), 0, axis=0)
-            new_value_down = np.delete(one_step, 0, axis=0)
-            if self.has_wall:
                 wall_list = self.wall_dict[self.run_down]
                 new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
-            one_step = np.delete(np.concatenate((self.value[..., 0:2], self.value), axis=1), -1, axis=1)
-            new_value_left = np.delete(one_step, -1, axis=1)
-            if self.has_wall:
+                wall_list = self.wall_dict[self.run_right]
+                new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
                 wall_list = self.wall_dict[self.run_left]
                 new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
-        # new_value = np.multiply(np.squeeze(self.p[:, :, self.up, action]), new_value_up) + \
-        #             np.multiply(np.squeeze(self.p[:, :, self.down, action]), new_value_down) + \
-        #             np.multiply(np.squeeze(self.p[:, :, self.left, action]), new_value_left) + \
-        #             np.multiply(np.squeeze(self.p[:, :, self.right, action]), new_value_right)
         new_value = self.action_p[self.up, action] * new_value_up + \
                     self.action_p[self.down, action] * new_value_down + \
                     self.action_p[self.left, action] * new_value_left + \
@@ -66,10 +60,7 @@ class MDP:
 
         return new_value
 
-
     def value_iteration(self):
-        u_p = 0
-        delta = 0
         # print(time.time())
         discount = self.e * (1 - self.discount) / self.discount
         # while delta >= discount:
@@ -127,6 +118,7 @@ class MDP:
             # print(max_value)
             # print(current_policy[0, -1])
             i += 1
+            # print(i)
             if delta < discount:
                 print(i)
                 return

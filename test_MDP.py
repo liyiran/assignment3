@@ -199,3 +199,16 @@ Run Up,Run Up,Run Up,None,Run Up,Walk Left\n"""
         str = mdp.out_put()
         with open("my_output2.txt", 'w') as f:
             f.write(str)
+        with open("output3.txt", "r") as f:
+            data = f.read()
+            self.assertEqual(data, str)
+
+    def test_single_row_no_wall(self):
+        mdp = MDP(length=1, width=3, p_walk=1, p_run=1, reward_run=0, reward_walk=0, wall_list=[], exit_list=[((0, 2), 1)], discount=0.7, e=1e-8)
+        mdp.value_iteration()
+        print(mdp.policy)
+
+    def test_single_column_no_wall(self):
+        mdp = MDP(length=3, width=1, p_walk=1, p_run=1, reward_run=0, reward_walk=0, wall_list=[], exit_list=[((0, 0), 1)], discount=0.7, e=1e-8)
+        mdp.value_iteration()
+        print(mdp.policy)
