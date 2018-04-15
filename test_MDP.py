@@ -140,7 +140,7 @@ class TestMDP(TestCase):
         test.assert_array_almost_equal(np.array([[7, 3, 0], [0, 2, 0], [4, 3, 4]]), mdp.policy)
 
     def test_case1(self):
-        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-8)
+        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-80)
         mdp.value_iteration()
         test.assert_equal(np.array([[7., 3., 0., 2., 6., 6.],
                                     [0., 0., 0., 0., 0., 2.],
@@ -149,7 +149,7 @@ class TestMDP(TestCase):
                                     [4., 4., 4., 4., 4., 2.]]), mdp.policy)
 
     def test_output(self):
-        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-8)
+        mdp = MDP(width=6, length=5, p_walk=0.8, p_run=0.6, reward_walk=-0.3, reward_run=-0.2, wall_list=[(1, 1), (4, 3)], discount=0.7, exit_list=[((0, 2), 10), ((2, 4), 5)], e=1e-80)
         mdp.policy = np.array([[7., 3., 0., 2., 6., 6.],
                                [0., 0., 0., 0., 0., 2.],
                                [4., 3., 4., 4., 4., 2.],
@@ -204,11 +204,74 @@ Run Up,Run Up,Run Up,None,Run Up,Walk Left\n"""
             self.assertEqual(data, str)
 
     def test_single_row_no_wall(self):
-        mdp = MDP(length=1, width=3, p_walk=1, p_run=1, reward_run=0, reward_walk=0, wall_list=[], exit_list=[((0, 2), 1)], discount=0.7, e=1e-8)
+        mdp = MDP(length=1, width=3, p_walk=1, p_run=1, reward_run=0, reward_walk=0, wall_list=[], exit_list=[((0, 2), 1)], discount=0.7, e=1e-80)
         mdp.value_iteration()
-        print(mdp.policy)
+        test.assert_array_almost_equal(np.array([[7, 3, 0]]), mdp.policy)
 
     def test_single_column_no_wall(self):
-        mdp = MDP(length=3, width=1, p_walk=1, p_run=1, reward_run=0, reward_walk=0, wall_list=[], exit_list=[((0, 0), 1)], discount=0.7, e=1e-8)
+        mdp = MDP(length=3, width=1, p_walk=1, p_run=1, reward_run=0, reward_walk=0, wall_list=[], exit_list=[((0, 0), 1)], discount=0.7, e=1e-80)
         mdp.value_iteration()
-        print(mdp.policy)
+        test.assert_array_almost_equal(np.array([[0], [0], [4]]), mdp.policy)
+
+    def test_single_row_middle_wall(self):
+        mdp = MDP(length=1, width=3, p_walk=0.7, p_run=0.7, reward_run=-0.1, reward_walk=-0.3, wall_list=[(0, 1)], exit_list=[((0, 2), 1)], discount=0.7, e=1e-80)
+        mdp.value_iteration()
+        policy = mdp.out_put()
+        self.assertEqual("Run Up,None,Exit\n", policy)
+
+    def test_single_column_middle_wall(self):
+        mdp = MDP(length=3, width=1, p_walk=0.7, p_run=0.7, reward_run=-0.1, reward_walk=-0.3, wall_list=[(1, 0)], exit_list=[((0, 0), 1)], discount=0.7, e=1e-80)
+        mdp.value_iteration()
+        str = mdp.out_put()
+        self.assertEqual(str, "Exit\nNone\nRun Up\n")
+
+    def test_big_accurate(self):
+        configuration = Configuration()
+        width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input5.txt")
+        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
+        mdp.value_iteration()
+        str = mdp.out_put()
+        with open("my_output5.txt", 'w') as f:
+            f.write(str)
+        with open("output_shun.txt", "r") as f:
+            data = f.read()
+            self.assertEqual(data, str)
+
+    def test_case7(self):
+        configuration = Configuration()
+        width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input7.txt")
+        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
+        mdp.value_iteration()
+        str = mdp.out_put()
+        with open("my_output7.txt", 'w') as f:
+            f.write(str)
+        # with open("output_shun.txt", "r") as f:
+        #     data = f.read()
+        #     self.assertEqual(data, str)
+
+    def test_case8_many_wall(self):
+        configuration = Configuration()
+        width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input8.txt")
+        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
+        mdp.value_iteration()
+        str = mdp.out_put()
+        with open("my_output8.txt", 'w') as f:
+            f.write(str)
+
+    def test_case_9(self):
+        configuration = Configuration()
+        width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input10.txt")
+        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
+        mdp.value_iteration()
+        str = mdp.out_put()
+        with open("my_output10.txt", 'w') as f:
+            f.write(str)
+    
+    def test_case_11_discount_0(self):
+        configuration = Configuration()
+        width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input11.txt")
+        mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
+        mdp.value_iteration()
+        str = mdp.out_put()
+        with open("my_output11.txt", 'w') as f:
+            f.write(str)

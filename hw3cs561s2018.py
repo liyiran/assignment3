@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
 import numpy as np
-import scipy.ndimage.interpolation as shift
-import numpy.testing as test
+
+max_accurate = 40000
 
 
 class MDP:
@@ -17,13 +17,17 @@ class MDP:
             new_value_left = np.delete(np.concatenate((self.value[..., 0:1], self.value), axis=1), -1, axis=1)
             if self.has_wall:
                 wall_list = self.wall_dict[self.walk_up]
-                new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+                if len(wall_list) != 0:
+                    new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
                 wall_list = self.wall_dict[self.walk_right]
-                new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+                if len(wall_list) != 0:
+                    new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
                 wall_list = self.wall_dict[self.walk_down]
-                new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+                if len(wall_list) != 0:
+                    new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
                 wall_list = self.wall_dict[self.walk_left]
-                new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+                if len(wall_list) != 0:
+                    new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
         else:
             if self.length > 2:
@@ -44,14 +48,18 @@ class MDP:
                 new_value_left = self.value
             if self.has_wall:
                 wall_list = self.wall_dict[self.run_up]
-                new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+                if len(wall_list) != 0:
+                    new_value_up[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
                 wall_list = self.wall_dict[self.run_down]
-                new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+                if len(wall_list) != 0:
+                    new_value_down[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
                 wall_list = self.wall_dict[self.run_right]
-                new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+                if len(wall_list) != 0:
+                    new_value_right[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
                 wall_list = self.wall_dict[self.run_left]
-                new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
+                if len(wall_list) != 0:
+                    new_value_left[wall_list[:, 0], wall_list[:, 1]] = self.value[wall_list[:, 0], wall_list[:, 1]]
 
         new_value = self.action_p[self.up, action] * new_value_up + \
                     self.action_p[self.down, action] * new_value_down + \
@@ -62,7 +70,11 @@ class MDP:
 
     def value_iteration(self):
         # print(time.time())
-        discount = self.e * (1 - self.discount) / self.discount
+
+        if self.discount != 0:
+            discount = self.e * (1 - self.discount) / self.discount
+        else:
+            discount = self.e
         # while delta >= discount:
         i = 0
         while True:
@@ -99,11 +111,12 @@ class MDP:
             # delta = min_value
             # print(delta)
             self.value = max_value
-            # print(max_value[2:6, 53:57])
+            # print("=====")
+            # print(max_value[38:43, 67:72])
             self.policy = current_policy
-            # print(self.policy[4, -5])
+            # print(self.policy[40, 69])
             # print(max_value)
-            # print(current_policy[0, -1])
+            # print(current_policy)
             i += 1
             # print(i)
             if delta <= discount:
@@ -193,10 +206,10 @@ class MDP:
         self.run_left = 6
         self.run_right = 7
         self.action_enum = (self.walk_up, self.walk_down, self.walk_left, self.walk_right, self.run_up, self.run_down, self.run_left, self.run_right)
-        if self.length * self.width <= 3000:
+        if self.length * self.width <= max_accurate:
             self.action_p = np.zeros((4, 8), dtype=np.clongfloat)
         else:
-            self.action_p = np.zeros((4, 8), dtype=np.float)
+            self.action_p = np.zeros((4, 8), dtype=np.float_)
 
         self.action_p[self.up, self.walk_up] = p_walk
         self.action_p[self.left, self.walk_up] = .5 * (1 - p_walk)
@@ -231,10 +244,10 @@ class MDP:
         self.action_p[self.down, self.run_left] = .5 * (1 - p_run)
 
         self.policy = np.zeros((length, width))
-        if self.length * self.width <= 3000:
+        if self.length * self.width <= max_accurate:
             self.value = np.zeros((length, width), dtype=np.clongfloat)
         else:
-            self.value = np.zeros((length, width), dtype=np.float)
+            self.value = np.zeros((length, width), dtype=np.float_)
         self.build_wall()
         self.fix_exit(self.value)
         self.has_wall = bool(self.wall_dict)
@@ -331,11 +344,11 @@ class Configuration:
 def main():
     # def __init__(self, length, width, p_walk, p_run, reward_run, reward_walk, discount, exit_list, e=10e-5):
     configuration = Configuration()
-    width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input.txt")
+    width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input3.txt")
     mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
     mdp.value_iteration()
     str = mdp.out_put()
-    with open("output.txt", 'w') as f:
+    with open("output3_my.txt", 'w') as f:
         f.write(str)
 
 
