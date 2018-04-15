@@ -92,10 +92,11 @@ class TestMDP(TestCase):
 
     def test_shift(self):
         x = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
-        x = shift.shift(x, (2, 0), mode="reflect")
-        print(x)
-        x[:, [0, 1]] = x[:, [1, 0]]
-        print(x)
+        # x = shift.shift(x, (2, 0), mode="reflect")
+        # print(x)
+        # x[:, [0, 1]] = x[:, [1, 0]]
+        # print(x)
+        print(np.delete(x, slice(0, 2), axis=1))
         # print(np.roll(x, (1, 0)))
 
     def test_wall_builder(self):
@@ -266,7 +267,7 @@ Run Up,Run Up,Run Up,None,Run Up,Walk Left\n"""
         str = mdp.out_put()
         with open("my_output10.txt", 'w') as f:
             f.write(str)
-    
+
     def test_case_11_discount_0(self):
         configuration = Configuration()
         width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input11.txt")

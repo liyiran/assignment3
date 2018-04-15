@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 import numpy as np
+import numpy.testing as test
 
 max_accurate = 40000
 
@@ -11,10 +12,14 @@ class MDP:
     def policy_evaluation(self, action):
 
         if action < 4:  # walk
-            new_value_up = np.delete(np.concatenate((self.value[0:1, ...], self.value), axis=0), -1, axis=0)
-            new_value_right = np.delete(np.concatenate((self.value, self.value[..., -1:]), axis=1), 0, axis=1)
-            new_value_down = np.delete(np.concatenate((self.value, self.value[-1:, ...]), axis=0), 0, axis=0)
-            new_value_left = np.delete(np.concatenate((self.value[..., 0:1], self.value), axis=1), -1, axis=1)
+            new_value_up = np.concatenate((self.value[0:1, ...], self.value), axis=0)[:-1, :]
+
+            new_value_right = np.concatenate((self.value, self.value[..., -1:]), axis=1)[:, 1:]
+
+            new_value_down = np.concatenate((self.value, self.value[-1:, ...]), axis=0)[1:, :]
+
+            new_value_left = np.concatenate((self.value[..., 0:1], self.value), axis=1)[:, :-1]
+
             if self.has_wall:
                 wall_list = self.wall_dict[self.walk_up]
                 if len(wall_list) != 0:
@@ -31,18 +36,14 @@ class MDP:
 
         else:
             if self.length > 2:
-                one_step = np.delete(np.concatenate((self.value[0:2:, ...], self.value), axis=0), -1, axis=0)
-                new_value_up = np.delete(one_step, -1, axis=0)
-                one_step = np.delete(np.concatenate((self.value, self.value[-2:, ...]), axis=0), 0, axis=0)
-                new_value_down = np.delete(one_step, 0, axis=0)
+                new_value_up = np.concatenate((self.value[0:2, ...], self.value), axis=0)[:-2, :]
+                new_value_down = np.concatenate((self.value, self.value[-2:, ...]), axis=0)[2:, :]
             else:
                 new_value_up = self.value
                 new_value_down = self.value
             if self.width > 2:
-                one_step = np.delete(np.concatenate((self.value, self.value[..., -2:]), axis=1), 0, axis=1)
-                new_value_right = np.delete(one_step, 0, axis=1)
-                one_step = np.delete(np.concatenate((self.value[..., 0:2], self.value), axis=1), -1, axis=1)
-                new_value_left = np.delete(one_step, -1, axis=1)
+                new_value_right = np.concatenate((self.value, self.value[..., -2:]), axis=1)[:, 2:]
+                new_value_left = np.concatenate((self.value[..., 0:2], self.value), axis=1)[:, :-2]
             else:
                 new_value_right = self.value
                 new_value_left = self.value
