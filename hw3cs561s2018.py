@@ -3,7 +3,7 @@
 import numpy as np
 import numpy.testing as test
 
-max_accurate = 40000
+max_accurate = 300000
 
 
 class MDP:
@@ -208,7 +208,7 @@ class MDP:
         self.run_right = 7
         self.action_enum = (self.walk_up, self.walk_down, self.walk_left, self.walk_right, self.run_up, self.run_down, self.run_left, self.run_right)
         if self.length * self.width <= max_accurate:
-            self.action_p = np.zeros((4, 8), dtype=np.clongfloat)
+            self.action_p = np.zeros((4, 8), dtype=np.longfloat)
         else:
             self.action_p = np.zeros((4, 8), dtype=np.float_)
 
@@ -246,7 +246,7 @@ class MDP:
 
         self.policy = np.zeros((length, width))
         if self.length * self.width <= max_accurate:
-            self.value = np.zeros((length, width), dtype=np.clongfloat)
+            self.value = np.zeros((length, width), dtype=np.longfloat)
         else:
             self.value = np.zeros((length, width), dtype=np.float_)
         self.build_wall()
@@ -345,11 +345,11 @@ class Configuration:
 def main():
     # def __init__(self, length, width, p_walk, p_run, reward_run, reward_walk, discount, exit_list, e=10e-5):
     configuration = Configuration()
-    width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input3.txt")
+    width, length, p_walk, p_run, r_walk, r_run, discount, wall_list, exit_list = configuration.read_file("input.txt")
     mdp = MDP(width=width, length=length, p_walk=p_walk, p_run=p_run, reward_walk=r_walk, reward_run=r_run, wall_list=wall_list, discount=discount, exit_list=exit_list, e=1e-80)
     mdp.value_iteration()
     str = mdp.out_put()
-    with open("output3_my.txt", 'w') as f:
+    with open("output.txt", 'w') as f:
         f.write(str)
 
 
